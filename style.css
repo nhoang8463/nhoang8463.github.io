@@ -16,7 +16,7 @@
 }
 
 .toggles {
-    top: 45%;
+    bottom: 100px;
     position: absolute;
 }
 
@@ -26,4 +26,16 @@
 
 h1, h2, h3 {
     margin-bottom: 0;
+}
+
+h1 {
+    font-size: 1.3em;
+}
+
+h2 {
+    font-size: 1.2em;
+}
+
+h3 {
+    font-size: 1em;
 }
