@@ -1,1 +1,285 @@
-Hello World
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Bay Area Software Companies Visualization</title>
+    <link rel="stylesheet" href="style.css">    
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+  </head>
+
+<!-- // IF SOMETHING DOESN'T WORK DO THIS: python3 -m http.server TO RUN ON YOUR SERVER -->
+<!-- TO CHECK: if there are any companies within the 0 rating -->
+  <body>
+    <div class="sidebar">
+        <h1>Bay Area Software Companies Visualization</h1>
+        <div class="companyInfo">
+            <h2>Company info</h2>
+            <p>Hover over a company (dot on the map) to know more.</p>
+            <div class="companyDetails"></div>
+        </div>
+        <div class="toggles">
+            <h2>Filters/adjustments</h2>
+            <!-- set up checkboxes for filtering -->
+            <div>
+                <h3>Show companies with average ratings between:</h3><br>
+                <input type="checkbox" class="checkbox" value="45" name="45" checked><label for="45">4-5</label>
+                <br><input type="checkbox" class="checkbox" value="34" name="34" checked><label for="34">3-3.999</label>
+                <br><input type="checkbox" class="checkbox" value="23" name="23" checked><label for="23">2-2.999</label>
+                <br><input type="checkbox" class="checkbox" value="12" name="12" checked><label for="12">1-1.999</label>
+                <br><input type="checkbox" class="checkbox" value="1" name="1" checked><label for="1">0-0.999</label>
+                <br><input type="checkbox" class="checkbox" value="-1" name="-1" checked><label for="-1">No rating</label>
+            </div>
+
+            <h3>Adjust circle slider radii:</h3>
+            <!-- set up sliders for circle radii -->
+            <div class="slidecontainer">
+                <input type="range" min="1" max="100" value="50" class="slider" id="circleARadius">
+            </div>
+            <div class="slidecontainer">
+                <input type="range" min="1" max="100" value="50" class="slider" id="circleBRadius">
+            </div> 
+        </div>
+    </div>
+
+    
+
+    
+
+    <div id="g"></div>
+
+    <script>
+        var mapWidth = 1240;
+        var mapHeight = 1600;
+
+        // Set up projection that the map is using. according to the example provided
+        var mapFrameGeoJSON = JSON.parse(`{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-122.54644297642132,37.989209933976475],[-121.74157680240731,37.19360698897229]]}}`)
+        var projection = d3.geoConicConformal()
+            .parallels([37 + 4 / 60, 38 + 26 / 60])
+            .rotate([120 + 30 / 60], 0)
+            .fitSize([mapWidth, mapHeight], mapFrameGeoJSON)
+
+        // Add an SVG element to the DOM
+        var svg = d3.select('#g')
+            .append('svg')
+            .attr('width', mapWidth)
+            .attr('height', mapHeight);
+
+        // Add the static PNG map at correct size, assuming map is saved in a subdirectory called `data`
+        svg.append('image')
+            .attr('width', mapWidth)
+            .attr('height', mapHeight)
+            .attr('xlink:href', 'data/map.png');
+
+        d3.csv("data/companies.csv").then(function(companies) {
+
+            //converts the string values into numbers
+            companies.forEach(function(company) {
+                company.Latitude = +company.Latitude;
+                company.Longitude = +company.Longitude;
+                company.Average_Rating = +company.Average_Rating;
+                company.Number_User_Ratings = +company.Number_User_Ratings;
+                company.projectedLocation = projection([company.Longitude, company.Latitude]);
+                //add rating category based on that company's average rating
+                if (company.Number_User_Ratings == 0) { //null rating
+                    company.Rating_Category = -1;
+                }
+                else if (company.Average_Rating >= 4.0 && company.Average_Rating <= 5.0) {
+                    company.Rating_Category = 45;
+                } else if (company.Average_Rating >= 3.0 && company.Average_Rating <= 3.99999) {
+                    company.Rating_Category = 34;
+
+                } else if (company.Average_Rating >= 2.0 && company.Average_Rating <= 2.99999) {
+                    company.Rating_Category = 23;
+
+                } else if (company.Average_Rating >= 1.0 && company.Average_Rating <= 1.99999) {
+                    company.Rating_Category = 12;
+
+                } else if (company.Average_Rating >= 0 && company.Average_Rating <= 0.99999) {
+                    company.Rating_Category = 1
+                }
+            })
+
+            svg.selectAll('.coordinates')
+                .data(companies)
+                .enter().append('circle')
+                .attr("class", "coordinates")
+                .attr('r', 2)
+                .attr('cx', function(company) { return company.projectedLocation[0]; })
+                .attr('cy', function(company) { return company.projectedLocation[1]; })
+                .style("fill", "red")
+                .on("mouseover", function(event, d) { // get company info on mouseover
+                    //cursor change info from https://stackoverflow.com/questions/36326683/d3-js-how-can-i-set-the-cursor-to-hand-when-mouseover-these-elements-on-svg-co
+                    d3.select(this).style("cursor", "pointer");
+                    d3.select(this)
+                    // let ttX = d.projectedLocation[0];
+                    // let ttY = d.projectedLocation[1] - 15;
+                    let companyMessage = "";
+                    if (d.Average_Rating >= 0 && d.Number_User_Ratings > 0) {
+                        companyMessage = "<h3>Company name:</h3>" + d.Name + "<br><h3>Average rating:</h3>" + d.Average_Rating;
+                    } else {
+                        companyMessage = "<h3>Company name:</h3>" + d.Name;
+                    }
+                    d3.select('.companyDetails').html("<div>" + companyMessage + "</div>");
+
+                    //below is for if you wanted to do a tooltip-like appearance
+
+                    // svg.append('text')
+                    // // document.getElementsByClassName('companyName')
+                    //     .attr("fill", "black")
+                    //     .html(function() {
+                    //         if (d.Average_Rating >= 0 && d.Number_User_Ratings > 0) {
+                    //             return "<tspan x='0' dy='1.2em'>Company name: " + d.Name + "</tspan><tspan x='0' dy='1.2em'>Average rating: " + d.Average_Rating + "</tspan>";
+                    //         }
+                    //         return "<tspan x='0' dy='1.2em'>Company name: " + d.Name + "</tspan>";
+                    //     })
+                    //     .attr('class', 'ptLabel') //Set class to 'ptLabel' so can remove easily later
+                    //     .attr("text-anchor", "left")
+                    //     .attr('x', ttX)  //Set label position near its circle xScale(d.weight)
+                    //     .attr('y', ttY) //Set label position near its circle yScale(d.height)
+                    //     .attr("dy", ".35em")           // set offset y position
+                    //     .style("fill", "black");
+                })
+                .on("mouseleave", function(event, d) { //remove company info on mouse leave
+                    d3.select(this).style("cursor", "default"); 
+                    d3.select(this)
+                    d3.selectAll('.ptLabel').remove();    // Remove all ptLabels
+                })
+
+                // referred to the below for help on how to approach filtering based on checkboxes
+                // https://d3-graph-gallery.com/graph/bubblemap_buttonControl.html
+                function update(){
+                    svg.selectAll(".coordinates").style("opacity", 0); //make all coords disappear
+                    d3.selectAll(".checkbox").each(function(d){ //for each checkbox
+                        cb = d3.select(this); //select the checkbox
+                        grp = cb.property("value"); //get value of the curr checkbox
+                        let coordinatesArray = document.getElementsByClassName("coordinates"); //get all coordinates
+                        
+                        //make all coords in selected categories "reappear"
+                        if(cb.property("checked")){
+                            for (let i = 0; i < coordinatesArray.length; i++) {
+                                if (grp == coordinatesArray[i].__data__.Rating_Category) {
+                                    coordinatesArray[i].style.opacity = 1;
+                                }
+                            }
+                        }
+                    })
+                }
+
+            //calls update when there's been a change in the checkboxes
+            d3.selectAll(".checkbox").on("change",update);
+            update()
+        })
+
+
+        // https://d3-graph-gallery.com/graph/circularpacking_drag.html -> Reference 
+        const width = 1240
+        const height = 1600
+            
+        const data = [{ "name": "A", id: "CircleA" }, { "name": "B", id: "CircleB"}]
+            
+            // Initialize the circle: all located at the center of the svg area
+            const node = svg.append("g")
+            .selectAll("circle")
+            .data(data)
+            .join("circle")
+                .attr("r", 50)
+                .attr("cx", width / 2)
+                .attr("cy", height / 2)
+                .attr("id", data => data.id)
+                .style("fill", "#1gs462")
+                .style("fill-opacity", 0.3)
+                .attr("stroke", "#b3a2c8")
+                .style("stroke-width", 2)
+                .call(d3.drag() // call specific function when circle is dragged
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended));
+            
+            // Features of the forces applied to the nodes:
+            const simulation = d3.forceSimulation()
+            simulation
+                .nodes(data)
+                .on("tick", function(d){
+                node
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                });
+            
+            // What happens when a circle is dragged?
+            function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(.03).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+            updateDataPointColors ();
+            }
+
+
+            function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(.03);
+            d.fx = null;
+            d.fy = null;
+            }
+
+            function updateDataPointColors() {
+                let coordinatesArray = document.getElementsByClassName("coordinates");
+                for (let i = 0; i < coordinatesArray.length; i++) {
+                    let cx = coordinatesArray[i].getAttribute("cx");
+                    let cy = coordinatesArray[i].getAttribute("cy");
+                    coordinatesArray[i].style.fill = filterFunction(cx, cy) ? "black" : "red";
+                }
+            }
+
+
+            // https://thematicmapping.org/playground/d3/d3.slider/ -> reference 
+            // Update circle with slider 
+            window.onload = function(e){
+                d3.select("#circleARadius").on("input", function(evt, value) {
+                    d3.select('#CircleA').attr("r", this.value);
+                    updateDataPointColors();
+                })
+                d3.select("#circleBRadius").on("input", function(evt, value) {
+                    d3.select('#CircleB').attr("r", this.value);
+                    updateDataPointColors();
+                })
+                let coordinatesArray = document.getElementsByClassName("coordinates");
+            }
+            
+
+            // circle overlap 
+            const calculateDistance = (x1, y1, x2, y2) => {
+                return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+            };
+
+            const isPointInCircle = (pointX, pointY, circleX, circleY, radius) => {
+                const distance = calculateDistance(pointX, pointY, circleX, circleY);
+                return distance < radius;
+            };
+
+            const filterFunction = (x, y) => {
+                const circle1 = d3.select("#CircleA");
+                const circle2 = d3.select("#CircleB");
+
+                const cx1 = +circle1.attr("cx");
+                const cy1 = +circle1.attr("cy");
+                const r1 = +circle1.attr("r");
+
+                const cx2 = +circle2.attr("cx");
+                const cy2 = +circle2.attr("cy");
+                const r2 = +circle2.attr("r");
+
+                const inCircle1 = isPointInCircle(x, y, cx1, cy1, r1);
+                const inCircle2 = isPointInCircle(x, y, cx2, cy2, r2);
+
+                return inCircle1 && inCircle2;
+            };
+    </script>
+  </body>
+</html>
