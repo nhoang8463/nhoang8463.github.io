@@ -29,7 +29,8 @@
                 <br><input type="checkbox" class="checkbox" value="34" name="34" checked><label for="34">3-3.999</label>
                 <br><input type="checkbox" class="checkbox" value="23" name="23" checked><label for="23">2-2.999</label>
                 <br><input type="checkbox" class="checkbox" value="12" name="12" checked><label for="12">1-1.999</label>
-<!--                 <br><input type="checkbox" class="checkbox" value="1" name="1" checked><label for="1">0-0.999</label> -->
+                <!-- didn't realize at the time that there was no 0-0.999 rating range oops -->
+                <!-- <br><input type="checkbox" class="checkbox" value="1" name="1" checked><label for="1">0-0.999</label> -->
                 <br><input type="checkbox" class="checkbox" value="-1" name="-1" checked><label for="-1">No rating</label>
             </div>
 
@@ -51,8 +52,8 @@
     <div id="g"></div>
 
     <script>
-        var mapWidth = 1240;
-        var mapHeight = 1600;
+        var mapWidth = 992;
+        var mapHeight = 1280;
 
         // Set up projection that the map is using. according to the example provided
         var mapFrameGeoJSON = JSON.parse(`{"type":"Feature","geometry":{"type":"LineString","coordinates":[[-122.54644297642132,37.989209933976475],[-121.74157680240731,37.19360698897229]]}}`)
@@ -175,8 +176,8 @@
 
 
         // https://d3-graph-gallery.com/graph/circularpacking_drag.html -> Reference 
-        const width = 1240
-        const height = 1600
+        const width = 992
+        const height = 1280
             
         const data = [{ "name": "A", id: "CircleA" }, { "name": "B", id: "CircleB"}]
             
