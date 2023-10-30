@@ -110,7 +110,7 @@
                 .attr('r', 2)
                 .attr('cx', function(company) { return company.projectedLocation[0]; })
                 .attr('cy', function(company) { return company.projectedLocation[1]; })
-                .style("fill", "aqua")
+                .style("fill", "red")
                 .on("mouseover", function(event, d) { // get company info on mouseover
                     //cursor change info from https://stackoverflow.com/questions/36326683/d3-js-how-can-i-set-the-cursor-to-hand-when-mouseover-these-elements-on-svg-co
                     d3.select(this).style("cursor", "pointer");
